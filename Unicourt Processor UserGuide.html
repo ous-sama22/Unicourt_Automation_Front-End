@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <style>
+    body { padding: 25px; font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container-fluid { max-width: 900px; margin: auto; } /* Changed to container-fluid for better width usage */
+    h1, h2, h3, h4 { margin-top: 1.5em; margin-bottom: 0.5em; color: #2c3e50; font-weight: 500;}
+    h1 { font-size: 1.9em; border-bottom: 2px solid #3498db; padding-bottom: 0.3em; margin-top: 0.5em;}
+    h2 { font-size: 1.6em; border-bottom: 1px solid #bdc3c7; padding-bottom: 0.2em;}
+    h3 { font-size: 1.35em; color: #2980b9; }
+    h4 { font-size: 1.15em; color: #34495e; }
+    p { margin-bottom: 1em; }
+    ul, ol { margin-left: 25px; margin-bottom: 1em; }
+    li { margin-bottom: 0.6em; }
+    code {
+      background-color: #f0f0f0;
+      border: 1px solid #e0e0e0;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: "Consolas", "Courier New", Courier, monospace;
+      font-size: 0.9em;
+    }
+    .menu-item-name { font-weight: bold; color: #3498db; } /* For menu item names */
+    .sheet-name { font-style: italic; color: #27ae60; font-weight: bold; } /* For sheet names */
+    .important-note { color: #c0392b; font-weight: bold; }
+    .note-text { font-style: italic; color: #7f8c8d; }
+    .column-name { font-family: "Consolas", "Courier New", Courier, monospace; color: #555; font-size: 0.95em;}
+    .section { margin-bottom: 30px; }
+    .close-button-container { text-align: right; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <h1>UniCourt Processor Google Sheet Add-on: User Guide</h1>
+
+    <div class="section">
+      <p>This guide explains how to use the "UniCourt Processor" Google Sheet Add-on to interact with the backend case processing bot.</p>
+    </div>
+
+    <div class="section">
+      <h2>1. Overview</h2>
+      <p>The UniCourt Processor Google Sheet Add-on provides a user-friendly interface to:</p>
+      <ul>
+        <li>Submit cases for processing by the backend bot.</li>
+        <li>Track the status of submitted cases.</li>
+        <li>View detailed information retrieved by the bot.</li>
+        <li>Configure backend settings.</li>
+        <li>Monitor the backend's health and operational status.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>2. Prerequisites</h2>
+      <ul>
+        <li><strong class="menu-item-name">Backend Bot Running:</strong> The Python backend application (UniCourt Processor API) must be running and accessible from where Google Apps Script executes (Google's servers).</li>
+        <li><strong class="menu-item-name">Google Account:</strong> You need a Google account to use Google Sheets.</li>
+        <li><strong class="menu-item-name">Add-on Installation:</strong> This script needs to be correctly installed and authorized within your Google Sheet.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>3. Getting Started: Initial Setup</h2>
+      <p>When you first open the Google Sheet with this add-on:</p>
+      <ol>
+        <li>
+          <strong>Ensure Sheet Structure:</strong>
+          <ul>
+            <li>Go to <span class="menu-item-name">🏛️ UniCourt Processor > 📝 Ensure/Reset Sheet Headers & Structure</span>.</li>
+            <li>Confirm the prompt. This will create/reset the necessary sheets (<span class="sheet-name">Unicourt Processor Case Submissions</span>, <span class="sheet-name">Unicourt Processor Case Details</span>, <span class="sheet-name">Unicourt Processor All Cases</span>) with the correct headers and ensure the <span class="sheet-name">Research</span> sheet exists. The three "Unicourt Processor..." sheets will be hidden as they are mostly managed by the script.</li>
+            <li>This step is crucial for the add-on to function correctly.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Configure Settings:</strong>
+          <ul>
+            <li>Go to <span class="menu-item-name">🏛️ UniCourt Processor > ⚙️ Configure Settings</span>. This will open a sidebar.</li>
+            <li>
+              <strong>Backend Connection (Apps Script Only):</strong>
+              <ul>
+                <li><span class="column-name">Backend API URL:</span> Enter the full URL to your running backend bot's API (e.g., <code>http://your-server-ip:8000/api/v1</code>).</li>
+                <li><span class="column-name">Backend API Key:</span> Enter the API key required to access your backend.</li>
+                <li>Click <span class="menu-item-name">"Save Backend Connection"</span>. This stores these settings within the Apps Script properties.</li>
+              </ul>
+            </li>
+            <li>
+              <strong>Client Credentials & Settings (Apps Script & Backend's config.json):</strong>
+              <ul>
+                <li><span class="column-name">Unicourt Email:</span> Your Unicourt login email.</li>
+                <li><span class="column-name">Unicourt Password:</span> Your Unicourt login password.</li>
+                <li><span class="column-name">OpenRouter API Key:</span> Your API key for OpenRouter (for LLM processing).</li>
+                <li><span class="column-name">OpenRouter LLM Model:</span> The specific LLM model to use (e.g., <code>google/gemini-2.0-flash-001</code>).</li>
+                <li><span class="column-name">Extract Associated Party Addresses:</span> Check this box if you want the backend to attempt to extract addresses for associated parties.</li>
+                <li>Click <span class="menu-item-name">"Save Client Credentials & Settings"</span>. This saves credentials to Apps Script properties AND sends them to the backend to update its <code>config.json</code> file.</li>
+                <li><span class="important-note">IMPORTANT:</span> After saving these client credentials, a backend restart is required for the changes to take effect on the server. You can use the <span class="menu-item-name">"Request Backend Restart"</span> button in the sidebar.</li>
+                <li>Alternatively, use <span class="menu-item-name">"Save All Settings Above"</span> to save both sections at once.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <h2>4. Core Sheets Explained</h2>
+      <p>The add-on uses several sheets to manage data. Most "Unicourt Processor..." sheets are hidden and managed automatically.</p>
+
+      <h3><span class="sheet-name">Research</span> Sheet</h3>
+      <ul>
+        <li><strong>Purpose:</strong> This is your primary sheet for inputting new cases that you want to research and submit.</li>
+        <li>
+          <strong>Key Columns for Input (ensure these headers exist):</strong>
+          <ul>
+            <li><span class="column-name">Court Case Number:</span> The unique identifier for the case (will be used as <code>case_number_for_db_id</code>).</li>
+            <li><span class="column-name">Court Case Title:</span> The name of the case (will be used as <code>case_name_for_search</code>).</li>
+            <li><span class="column-name">(Optional) Creditor Parsed First Name:</span> First name if the creditor is an individual.</li>
+            <li><span class="column-name">(Optional) Creditor Parsed Last Name:</span> Last name if the creditor is an individual.</li>
+            <li><span class="column-name">Creditor Business Name:</span> Business name if the creditor is a company.
+              <br/><span class="note-text">Note: If Creditor Business Name is filled, it's considered a business, and this name is used as the <code>input_creditor_name</code>. Otherwise, First + Last name is used.</span></li>
+            <li><span class="column-name">Type:</span> Creditor type (e.g., "Plaintiff" or "Defendant").</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Output Columns (updated by "Refresh All Case Data"):</strong>
+          <ul>
+            <li><span class="column-name">Creditor Business State of Incorporation</span></li>
+            <li><span class="column-name">Original Creditor Name</span></li>
+            <li><span class="column-name">Original Creditor Address on Judgment</span></li>
+            <li><span class="column-name">Additional Creditor Name</span></li>
+            <li><span class="column-name">Additional Creditor Address on Judgment</span></li>
+            <li><span class="column-name">Voluntary Dismissal/Vacate Judgment (Y/N)</span></li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3><span class="sheet-name">Unicourt Processor Case Submissions</span> Sheet</h3>
+      <ul>
+        <li>(Hidden by default, managed by the script)</li>
+        <li><strong>Purpose:</strong> Tracks all cases submitted to the backend, whether manually or via auto-submit.</li>
+        <li>
+          <strong>Key Columns:</strong>
+          <ul>
+            <li><span class="column-name">Case Number (DB Key):</span> The unique case ID.</li>
+            <li><span class="column-name">Case Name for Search:</span> Name used for Unicourt search.</li>
+            <li><span class="column-name">Input Creditor Name:</span> Creditor name focused on by the LLM.</li>
+            <li><span class="column-name">Is Business (TRUE/FALSE):</span> If the creditor is a business.</li>
+            <li><span class="column-name">Creditor Type (Plaintiff/Defendant):</span> Type of creditor.</li>
+            <li><span class="column-name">Submission Status:</span> Status like "Submitted to Backend", "Submission Error".</li>
+            <li><span class="column-name">Last Submit Attempt:</span> Timestamp of the last submission attempt.</li>
+            <li><span class="column-name">Jump to Case Detail:</span> A hyperlink to the corresponding row in the "<span class="sheet-name">Unicourt Processor Case Details</span>" sheet (if data exists there).</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3><span class="sheet-name">Unicourt Processor Case Details</span> Sheet</h3>
+      <ul>
+        <li>(Hidden by default, managed by the script)</li>
+        <li><strong>Purpose:</strong> Stores detailed information retrieved from the backend for each processed case. This sheet is updated by the "Refresh All Case Data" function.</li>
+        <li><strong>Key Columns (auto-populated):</strong> Contains all fields from the backend's <code>CaseDetailResponse</code>, including Unicourt URLs, extracted creditor names, addresses, associated parties, document summaries, and the overall processing status from the backend.</li>
+      </ul>
+
+      <h3><span class="sheet-name">Unicourt Processor All Cases</span> Sheet</h3>
+      <ul>
+        <li>(Hidden by default, managed by the script)</li>
+        <li><strong>Purpose:</strong> Populated when you use the "Get All Cases" menu item. It provides a snapshot of all cases currently in the backend's database.</li>
+        <li><strong>Key Columns (auto-populated):</strong> Similar to the "<span class="sheet-name">Unicourt Processor Case Details</span>" sheet.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>5. Using the "<span class="menu-item-name">🏛️ UniCourt Processor</span>" Menu</h2>
+
+      <h4>Case Submission & Data Management</h4>
+      <ul>
+        <li>
+          <strong class="menu-item-name">🚀 Submit Selected Cases:</strong>
+          <ul>
+            <li><strong>How to use:</strong>
+              <ol>
+                <li>Go to the <span class="sheet-name">Research</span> sheet, or <span class="sheet-name">Unicourt Processor Case Submissions</span> sheet, or <span class="sheet-name">Unicourt Processor Case Details</span> sheet.</li>
+                <li>Select the row(s) containing the case(s) you want to submit or resubmit. Ensure the required columns (Case Number, Case Name, Creditor Info, Type) are filled correctly.</li>
+                <li>Click this menu item.</li>
+              </ol>
+            </li>
+            <li><strong>Action:</strong> Extracts case data from the selected rows and sends it to the backend for processing.</li>
+            <li>Updates the <span class="column-name">Submission Status</span> and <span class="column-name">Last Submit Attempt</span> columns in the <span class="sheet-name">Unicourt Processor Case Submissions</span> sheet (and creates entries if submitted from <span class="sheet-name">Research</span>).</li>
+            <li>Automatically triggers a data refresh after submission.</li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">🔄 Refresh All Case Data:</strong>
+          <ul>
+            <li><strong>Action:</strong> Fetches the latest status and data from the backend for:
+              <ul>
+                <li>Cases currently marked as "Processing" or "Queued" in the <span class="sheet-name">Unicourt Processor Case Details</span> sheet.</li>
+                <li>Cases present in the <span class="sheet-name">Unicourt Processor Case Submissions</span> sheet that are not yet in <span class="sheet-name">Unicourt Processor Case Details</span>.</li>
+                <li>Any cases that were part of a recent manual submission (including resubmitted finished cases).</li>
+              </ul>
+            </li>
+            <li>Updates the <span class="sheet-name">Unicourt Processor Case Details</span> sheet with the fetched information.</li>
+            <li>Updates relevant output columns in the <span class="sheet-name">Research</span> sheet if matching cases are found.</li>
+            <li>If any refreshed cases are still "Processing" or "Queued", it will schedule a follow-up refresh in ~1 minute to check again.</li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">📥 Get All Cases:</strong>
+          <ul>
+            <li><strong>Action:</strong> Fetches all case records currently stored in the backend's database.</li>
+            <li>Populates/overwrites the <span class="sheet-name">Unicourt Processor All Cases</span> sheet with this data.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h4>Automation</h4>
+      <ul>
+        <li>
+          <strong class="menu-item-name">⏱️ Enable Auto-Submit:</strong>
+          <ul>
+            <li><strong>Action:</strong> Opens a dialog prompting you to select an interval (e.g., every hour, every 5 minutes).</li>
+            <li>Once an interval is selected and confirmed, it creates a time-driven trigger.</li>
+            <li>The trigger will automatically:
+              <ol>
+                <li>Check the <span class="sheet-name">Unicourt Processor Case Submissions</span> sheet for cases with no status or an "Submission Error" status and submit them if all required columns (Case Number, Case Name for Search, Input Creditor Name, Is Business, Creditor Type) are filled correctly.</li>
+                <li>Check the <span class="sheet-name">Research</span> sheet for new cases (not already in <span class="sheet-name">Unicourt Processor Case Submissions</span>) and submit them if all required columns (Case Number, Case Name, Creditor Info, Type) are filled correctly.</li>
+              </ol>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">⏸️ Disable Auto-Submit:</strong>
+          <ul>
+            <li><strong>Action:</strong> Deletes any active auto-submit trigger.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h4>Backend Status & Information</h4>
+      <ul>
+        <li>
+          <strong class="menu-item-name">🩺 Check Backend Health:</strong>
+          <ul>
+            <li><strong>Action:</strong> Pings the backend's <code>/healthz</code> endpoint.</li>
+            <li><strong>Output:</strong> Displays a dialog showing the backend's health status (healthy, degraded, unhealthy) and a message.</li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">📊 View Backend Service Status:</strong>
+          <ul>
+            <li><strong>Action:</strong> Queries the backend's <code>/service/status</code> endpoint.</li>
+            <li><strong>Output:</strong> Displays a dialog with information like:
+              <ul>
+                <li>Service readiness</li>
+                <li>Unicourt session file status</li>
+                <li>Current queue size</li>
+                <li>Active processing tasks</li>
+                <li>Max concurrent tasks</li>
+                <li>Playwright initialization status</li>
+                <li>Download location</li>
+                <li>Whether "Extract Associated Party Addresses" is enabled on the backend.</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">📋 Get Batch Case Status:</strong>
+          <ul>
+            <li><strong>How to use:</strong>
+              <ol>
+                <li>Select cells/rows containing case numbers in any of the relevant sheets (<span class="sheet-name">Research</span>, <span class="sheet-name">Unicourt Processor Case Submissions</span>, <span class="sheet-name">Unicourt Processor Case Details</span>).</li>
+                <li>Click this menu item.</li>
+              </ol>
+            </li>
+            <li><strong>Action:</strong> Sends the selected case numbers to the backend's <code>/cases/batch-status</code> endpoint.</li>
+            <li><strong>Output:</strong> Displays a dialog showing the current status, a brief message, and some key data points for each requested case.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h4>Utilities & Configuration</h4>
+      <ul>
+        <li>
+          <strong class="menu-item-name">📖 View API Documentation:</strong>
+          <ul>
+            <li><strong>Action:</strong> Open the backend's API documentation page (a Swagger/OpenAPI UI found at <code>/docs</code> relative to the base backend URL) in a new browser tab.</li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">⚙️ Configure Settings:</strong>
+          <ul>
+            <li><strong>Action:</strong> Opens the configuration sidebar (see Initial Setup for details).</li>
+            <li>From the sidebar, you can:
+              <ul>
+                <li>Save Backend Connection settings (URL, API Key - stored in Apps Script).</li>
+                <li>Save Client Credentials (Unicourt/OpenRouter details, LLM model, Extract Associated Party Addresses - stored in Apps Script and sent to update backend's <code>config.json</code>).</li>
+                <li>Save all settings at once.</li>
+                <li>Show the current client-configurable settings active on the backend (read from its <code>config.json</code>).</li>
+                <li>Request a backend restart (useful after changing client credentials).</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">📝 Ensure/Reset Sheet Headers & Structure:</strong>
+          <ul>
+            <li><strong>Action:</strong> (As described in Initial Setup). Ensures all required sheets exist with correct headers and hides the "Unicourt Processor..." sheets.</li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">📜 View Submission Log:</strong>
+          <ul>
+            <li><strong>Action:</strong> Displays a dialog showing a log of the most recent case submission attempts (both manual and automatic), including timestamp, case number, and type.</li>
+          </ul>
+        </li>
+        <li>
+          <strong class="menu-item-name">❓ View API Error Log:</strong>
+          <ul>
+            <li><strong>Action:</strong> Displays a dialog showing a log of the most recent errors encountered when communicating with the backend API. This is useful for diagnosing issues. Includes timestamp, endpoint, HTTP code, and response body.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <!-- Placeholder for future sections like Workflow Examples and Troubleshooting -->
+    <div class="close-button-container">
+      <button class="btn waves-effect waves-light modal-close" onclick="google.script.host.close()">Close</button>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Materialize components if any are used dynamically or need it
+        // M.AutoInit(); // Usually not needed for simple display, but good practice
+     });
+  </script>
+</body>
+</html>

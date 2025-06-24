@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <style>
+      body { padding: 20px; font-family: Arial, sans-serif; }
+      .container { margin-bottom: 20px; }
+      .btn { margin-top: 15px; margin-right: 10px; }
+      .input-field { margin-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h5>Configure Auto-Submit Interval</h5>
+      <p>Select how often the script should automatically check for and submit new or errored cases from the "Case Submissions" sheet, and new cases from "Sample Researched Case".</p>
+      <div class="input-field">
+        <select id="interval" class="browser-default">
+          <option value="1">Every minute</option>
+          <option value="5">Every 5 minutes</option>
+          <option value="10">Every 10 minutes</option>
+          <option value="15">Every 15 minutes</option>
+          <option value="30">Every 30 minutes</option>
+          <option value="60">Every 1 hour</option>
+          <option value="120">Every 2 hours</option>
+          <option value="240">Every 4 hours</option>
+          <option value="360">Every 6 hours</option>
+          <option value="480">Every 8 hours</option>
+          <option value="720">Every 12 hours</option>
+          <option value="1440">Every 1 day</option>
+          <option value="2880">Every 2 days</option>
+          <option value="4320">Every 3 days</option>
+          <option value="10080">Every 1 week</option>
+        </select>
+        <label for="interval" class="active">Select Interval</label>
+      </div>
+      <div>
+        <button class="btn waves-effect waves-light" onclick="saveInterval()">Enable Auto-Submit</button>
+        <button class="btn waves-effect waves-light red lighten-2 modal-close" onclick="google.script.host.close()">Cancel</button>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+      });
+      
+      function saveInterval() {
+        const intervalElement = document.getElementById('interval');
+        const interval = intervalElement.value;
+        const selectedText = intervalElement.options[intervalElement.selectedIndex].text;
+
+        // Confirmation for longer intervals
+        if (Number(interval) >= 1440) { // 1 day or more
+            if (!confirm("You selected an interval of " + selectedText + ". Are you sure? This means automatic submissions will occur less frequently.")) {
+                return; // User cancelled
+            }
+        }
+        
+        google.script.run
+          .withSuccessHandler(() => {
+            google.script.host.close();
+          })
+          .withFailureHandler(err => {
+            alert("Failed to enable auto-submit: " + err.message);
+          })
+          .createAutoSubmitTrigger(Number(interval));
+      }
+    </script>
+  </body>
+</html>

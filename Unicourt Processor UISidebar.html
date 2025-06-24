@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <style>
+    body { padding: 20px; font-family: Arial, sans-serif; }
+    .input-field label { color: #000; }
+    /* Make buttons take more width and stack nicely */
+    .btn, button { margin-top: 10px; margin-right: 5px; width: calc(100% - 10px); }
+    .button-group button { margin-bottom: 5px; } /* Add some space between stacked buttons */
+    .progress { display: none; margin-top:15px; }
+    #messages { margin-top: 15px; padding: 10px; border-radius: 4px; display: none; word-wrap: break-word; }
+    #messages.error { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
+    #messages.success { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; }
+    #messages.info { background-color: #e3f2fd; color: #1565c0; border: 1px solid #1565c0; }
+    #messages.warning { background-color: #fff3e0; color: #ef6c00; border: 1px solid #ef6c00; }
+    hr { margin-top: 20px; margin-bottom: 20px; }
+    .button-group { margin-bottom: 15px; }
+    .button-group h6 { margin-bottom: 5px; font-weight: bold; }
+    .checkbox-field label {
+        display: flex; /* Use flexbox for alignment */
+        align-items: center; /* Vertically align items in the center */
+        color: #000; /* Ensure label text is black */
+        font-size: 1rem; /* Match default label size */
+    }
+    .checkbox-field input[type="checkbox"]+span {
+        padding-left: 25px; /* Adjust padding for checkbox */
+        color: #000; /* Ensure span text is black */
+    }
+  </style>
+</head>
+<body>
+  <h5>Backend Settings</h5>
+  <p>Configure Apps Script connection and client credentials for the backend.</p>
+
+  <div class="button-group">
+    <h6>Backend Connection (Apps Script Only)</h6>
+    <div class="row">
+      <div class="input-field col s12">
+        <input id="backendUrl" type="url">
+        <label for="backendUrl">Backend API URL (e.g., http://ip:port/api/v1)</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="input-field col s12">
+        <input id="backendApiKey_ui" type="password">
+        <label for="backendApiKey_ui">Backend API Key</label>
+      </div>
+    </div>
+    <button class="btn waves-effect waves-light blue lighten-1" onclick="saveBackendConnection()">Save Backend Connection</button>
+  </div>
+  <hr/>
+
+  <div class="button-group">
+    <h6>Client Credentials & Settings (Apps Script & Backend's config.json)</h6>
+    <p style="font-size:0.9em; color: #ef6c00;">Backend restart required for these changes to take full effect.</p>
+    <div class="row">
+      <div class="input-field col s12">
+        <input id="unicourtEmail" type="email">
+        <label for="unicourtEmail">Unicourt Email (leave blank to keep existing on backend)</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="input-field col s12">
+        <input id="unicourtPassword_ui" type="password">
+        <label for="unicourtPassword_ui">Unicourt Password (leave blank to keep existing on backend)</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="input-field col s12">
+        <input id="openrouterKey_ui" type="password">
+        <label for="openrouterKey_ui">OpenRouter API Key (leave blank to keep existing on backend)</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="input-field col s12">
+        <input id="openrouterModel" type="text">
+        <label for="openrouterModel">OpenRouter LLM Model (leave blank to keep existing on backend)</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col s12 checkbox-field" style="margin-top: 15px; margin-bottom: 5px;">
+        <label>
+          <input type="checkbox" id="extractAssociatedPartyAddresses" class="filled-in" />
+          <span>Extract Associated Party Addresses</span>
+        </label>
+      </div>
+    </div>
+    <button class="btn waves-effect waves-light green lighten-1" onclick="saveClientCredentials()">Save Client Credentials & Settings</button>
+  </div>
+  <hr/>
+
+  <button class="btn waves-effect waves-light" onclick="saveAllSettings()">Save All Settings Above</button>
+  <button class="btn waves-effect waves-light grey" onclick="fetchBackendConfig()">Show Backend's Client Config</button>
+  <button class="btn waves-effect waves-light orange" onclick="requestRestart()">Request Backend Restart</button>
+  
+  <div class="progress" id="loader">
+      <div class="indeterminate"></div>
+  </div>
+  <div id="messages"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    function showLoader(show) {
+      document.getElementById('loader').style.display = show ? 'block' : 'none';
+    }
+
+    function showMessage(text, type = 'info') {
+      const msgDiv = document.getElementById('messages');
+      msgDiv.innerHTML = text; 
+      msgDiv.className = type; 
+      msgDiv.style.display = 'block';
+      if (type === 'info' || type === 'success') {
+        setTimeout(() => { msgDiv.style.display = 'none'; }, 10000);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      M.AutoInit(); 
+      showLoader(true);
+      google.script.run
+        .withSuccessHandler(settings => {
+          showLoader(false);
+          if (settings) {
+            document.getElementById('backendUrl').value = settings.backendUrl || '';
+            document.getElementById('backendApiKey_ui').value = settings.backendApiKey || ''; // Still load API key here for visibility
+            document.getElementById('unicourtEmail').value = settings.unicourtEmail || '';
+            document.getElementById('openrouterModel').value = settings.openrouterModel || '';
+            document.getElementById('extractAssociatedPartyAddresses').checked = settings.extractAssociatedPartyAddresses === true;
+            M.updateTextFields(); 
+          } else {
+            showMessage('Could not load current Apps Script settings.', 'error');
+          }
+        })
+        .withFailureHandler(err => {
+          showLoader(false);
+          showMessage('Error loading settings: ' + err.message, 'error');
+        })
+        .getAppSettingsFromScriptProperties();
+    });
+
+    function getSettingsFromForm() {
+        return {
+          backendUrl: document.getElementById('backendUrl').value.trim(),
+          backendApiKey: document.getElementById('backendApiKey_ui').value,
+          unicourtEmail: document.getElementById('unicourtEmail').value.trim(),
+          unicourtPassword: document.getElementById('unicourtPassword_ui').value, // Will be empty if not typed
+          openrouterKey: document.getElementById('openrouterKey_ui').value,       // Will be empty if not typed
+          openrouterModel: document.getElementById('openrouterModel').value.trim(),
+          extractAssociatedPartyAddresses: document.getElementById('extractAssociatedPartyAddresses').checked
+        };
+    }
+
+    function saveBackendConnection() {
+      showLoader(true);
+      const settings = getSettingsFromForm();
+      const payload = {
+        backendUrl: settings.backendUrl,
+        backendApiKey: settings.backendApiKey
+      };
+      google.script.run
+        .withSuccessHandler(response => {
+          showLoader(false);
+          if (response && response.success) {
+            showMessage(response.message, 'success');
+          } else {
+            showMessage('Error saving Backend Connection: ' + (response ? response.error : 'Unknown error'), 'error');
+          }
+        })
+        .withFailureHandler(err => {
+          showLoader(false);
+          showMessage('Failed to run saveBackendConnection script: ' + err.message, 'error');
+        })
+        .saveBackendConnectionSettings_scriptOnly(payload);
+    }
+
+    function saveClientCredentials() {
+      showLoader(true);
+      const settings = getSettingsFromForm();
+      // Only include password fields if they are not empty, to avoid overwriting with blanks unintentionally
+      const payload = {
+        extractAssociatedPartyAddresses: settings.extractAssociatedPartyAddresses
+      };
+      if (settings.unicourtEmail) payload.unicourtEmail = settings.unicourtEmail;
+      if (settings.openrouterModel) payload.openrouterModel = settings.openrouterModel;
+      if (settings.unicourtPassword) payload.unicourtPassword = settings.unicourtPassword;
+      if (settings.openrouterKey) payload.openrouterKey = settings.openrouterKey;
+      
+      google.script.run
+        .withSuccessHandler(response => {
+          showLoader(false);
+          let msg = "";
+          let msgType = "info";
+
+          if (response && response.scriptSaveSuccess) {
+            msg += "Client credentials/settings saved to Apps Script. ";
+          } else {
+            msg += "Failed to save client credentials/settings to Apps Script. ";
+            msgType = "error";
+          }
+
+          if (response && response.backendUpdateResult) {
+            const backendRes = response.backendUpdateResult;
+            if (backendRes.success && backendRes.data) {
+              msg += "<br/>Backend update: " + backendRes.data.message;
+              if (backendRes.data.updated_fields && Object.keys(backendRes.data.updated_fields).length > 0) {
+                 msg += " (Fields: " + Object.keys(backendRes.data.updated_fields).join(", ") + ")";
+              }
+              if (backendRes.data.restart_required) {
+                msg += " <strong>RESTART BACKEND REQUIRED!</strong>";
+                if (msgType !== "error") msgType = "warning"; 
+              } else {
+                 if (msgType !== "error") msgType = "success";
+              }
+            } else {
+              msg += "<br/>Backend update failed: " + (backendRes.error || "Unknown backend error") + (backendRes.detail ? ' ('+backendRes.detail+')' : '');
+              msgType = "error";
+            }
+          }
+          showMessage(msg, msgType);
+        })
+        .withFailureHandler(err => {
+          showLoader(false);
+          showMessage('Failed to run saveClientCredentials script: ' + err.message, 'error');
+        })
+        .saveClientCredentials_scriptAndBackend(payload);
+    }
+    
+    function saveAllSettings() {
+      showLoader(true);
+      const settings = getSettingsFromForm();
+      google.script.run
+        .withSuccessHandler(response => {
+          showLoader(false);
+          let finalMessage = "";
+          let finalType = "success";
+
+          if (response.connectionSaveResult && response.connectionSaveResult.success) {
+            finalMessage += response.connectionSaveResult.message + "<br/>";
+          } else {
+            finalMessage += (response.connectionSaveResult ? response.connectionSaveResult.error : "Error saving connection settings.") + "<br/>";
+            finalType = "error";
+          }
+
+          if (response.credentialsSaveResult) {
+            const credRes = response.credentialsSaveResult;
+            if (credRes.scriptSaveSuccess) {
+              finalMessage += "Client credentials/settings saved to Apps Script. ";
+            } else {
+              finalMessage += "Failed to save client credentials/settings to Apps Script. ";
+              if (finalType !== "error") finalType = "warning";
+            }
+
+            if (credRes.backendUpdateResult) {
+              const backendRes = credRes.backendUpdateResult;
+              if (backendRes.success && backendRes.data) {
+                finalMessage += "<br/>Backend update: " + backendRes.data.message;
+                 if (backendRes.data.updated_fields && Object.keys(backendRes.data.updated_fields).length > 0) {
+                   finalMessage += " (Fields: " + Object.keys(backendRes.data.updated_fields).join(", ") + ")";
+                 }
+                if (backendRes.data.restart_required) {
+                  finalMessage += " <strong>RESTART BACKEND REQUIRED!</strong>";
+                  if (finalType !== "error") finalType = "warning";
+                }
+              } else {
+                finalMessage += "<br/>Backend update failed: " + (backendRes.error || "Unknown error") + (backendRes.detail ? ' ('+backendRes.detail+')' : '');
+                finalType = "error";
+              }
+            }
+          } else {
+            finalMessage += "Issue with credentials saving part.";
+            if (finalType !== "error") finalType = "warning";
+          }
+          showMessage(finalMessage, finalType);
+          // Clear password fields after attempt for security
+          document.getElementById('unicourtPassword_ui').value = '';
+          document.getElementById('openrouterKey_ui').value = '';
+          document.getElementById('backendApiKey_ui').value = '';
+
+        })
+        .withFailureHandler(err => {
+          showLoader(false);
+          showMessage('Failed to run saveAllSettings script: ' + err.message, 'error');
+        })
+        .saveAllSettings_scriptAndBackend(settings);
+    }
+
+    function requestRestart() {
+      if (!confirm("Are you sure you want to request a backend server restart? This should only be done after saving configuration changes that require it.")) {
+        return;
+      }
+      showLoader(true);
+      google.script.run
+        .withSuccessHandler(response => { 
+          showLoader(false);
+          if (response.success && response.data) {
+            showMessage("Backend Restart Requested: " + response.data.message, 'info');
+          } else {
+            showMessage("Backend Restart Failed: " + (response.error || "Unknown error") + (response.detail ? ' ('+response.detail+')' : ''), 'error');
+          }
+        })
+        .withFailureHandler(err => {
+          showLoader(false);
+          showMessage('Failed to request restart (script error): ' + err.message, 'error');
+        })
+        .requestBackendRestartFromSidebar();
+    }    function fetchBackendConfig() {
+      showLoader(true);
+      google.script.run
+        .withSuccessHandler(() => {
+          showLoader(false);
+        })
+        .withFailureHandler(err => {
+          showLoader(false);
+          showMessage('Failed to fetch backend config (script error): ' + err.message, 'error');
+        })
+        .displayCurrentBackendConfigFromSidebar(); 
+    }
+  </script>
+</body>
+</html>

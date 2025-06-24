@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <style> 
+      body { padding: 15px; font-family: Arial, sans-serif; } 
+      pre { 
+        white-space: pre-wrap; 
+        word-wrap: break-word; 
+        background-color: #f8f9fa; /* Lighter background */
+        padding: 10px; 
+        border: 1px solid #dee2e6; /* Softer border */
+        border-radius: 4px;
+        font-size: 0.9em;
+        max-height: 300px; /* Max height for scrollable pre */
+        overflow-y: auto;
+      }
+      ul { margin-left: 20px; list-style-type: disc; } /* Added disc for better visibility */
+      li { margin-bottom: 8px; }
+      h5 { margin-top: 0; }
+      #dialogContent { margin-top: 10px; max-height: 400px; overflow-y: auto;} 
+      .modal-footer { padding: 10px 0 0 0; text-align: right; } 
+    </style>
+  </head>
+  <body>
+    <h5 id="dialogTitle">Loading...</h5>
+    <div id="dialogContent"><p>Fetching content...</p></div>
+    
+    <div class="modal-footer">
+      <button class="btn waves-effect waves-light modal-close" onclick="google.script.host.close()">Close</button>
+    </div>
+
+    <script>
+      window.onload = function() {
+        google.script.run.withSuccessHandler(data => {
+          if (data && data.title && data.content) {
+            document.getElementById('dialogTitle').innerHTML = data.title;
+            document.getElementById('dialogContent').innerHTML = data.content; 
+          } else if (data && data.title) { 
+            document.getElementById('dialogTitle').innerHTML = data.title;
+            document.getElementById('dialogContent').innerHTML = "<p>(No specific content to display)</p>";
+          }
+          else {
+            document.getElementById('dialogTitle').innerHTML = "Error";
+            document.getElementById('dialogContent').innerHTML = "<p>Could not load dialog data.</p>";
+          }
+        }).withFailureHandler(err => {
+           document.getElementById('dialogTitle').innerHTML = "Error";
+           document.getElementById('dialogContent').innerHTML = "<p>Failed to retrieve dialog data: " + err.message + "</p>";
+        }).getDialogDisplayData();
+      };
+    </script>
+  </body>
+</html>

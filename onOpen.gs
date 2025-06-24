@@ -1,0 +1,25 @@
+function onOpen() {
+  const ui = SpreadsheetApp.getUi()
+  // UniCourt Processor menu
+  ui.createMenu('🏛️ UniCourt Processor')
+    .addItem('🔍 Search & Submit New Cases', 'manualSearchAndSubmitNewCases')
+    .addItem('🚀 Submit Selected Cases', 'submitSelectedCasesToBackend')
+    .addItem('🔄 Refresh Active & Pending Cases', 'refreshAllCaseData')
+    .addItem('📥 Get All Cases from the backend\'s db', 'getAllCasesFromBackend')
+    .addSeparator()
+    .addItem('⏱️ Enable Auto-Submit', 'enableAutoSubmit')
+    .addItem('⏸️ Disable Auto-Submit', 'disableAutoSubmit')
+    .addSeparator()
+    .addItem('🩺 Check Backend Health', 'displayBackendHealth_HTML')
+    .addItem('📊 View Backend Service Status', 'displayBackendServiceStatus_HTML')
+    .addItem('📋 Get Batch Case Status', 'promptAndDisplayBatchCaseStatus_HTML')
+    .addSeparator()
+    .addItem('📖 View API Documentation', 'viewBackendDocs_HTML')
+    .addItem('⚙️ Configure Settings', 'showConfigurationSidebar')
+    .addItem('📝 Ensure/Reset Sheet Headers & Structure', 'ensureAllSheetHeadersWithPrompt')
+    .addItem('📜 View Submission Log', 'viewSubmissionLog_HTML')
+    .addItem('❓ View API Error Log', 'viewLastApiErrorLog_HTML')
+    .addSeparator()
+    .addItem('📘 View User Guide', 'showUserGuideDialog')
+    .addToUi();
+}
