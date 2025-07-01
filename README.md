@@ -5,14 +5,20 @@ A Google Apps Script-based frontend interface for the UniCourt Automation Backen
 ## 🔗 Related Repositories
 
 - **This Repository**: [Unicourt_Automation_Front-End](https://github.com/ous-sama22/Unicourt_Automation_Front-End) - Google Apps Script frontend for Google Sheets integration
-- **Backend Repository**: [UniCourtAutomationBack-end---V4](https://github.com/ous-sama22/UniCourtAutomationBack-end---V4) - FastAPI backend service
+- **Backend Repository**: [UniCourt-Automation-Back-end](https://github.com/ous-sama22/UniCourt-Automation-Back-end) - FastAPI backend service
 
 ## 🌐 Quick Links
 
 - **📖 User Guide**: Open Google Sheets → Extensions → Apps Script → Open `Unicourt Processor UserGuide.html`
 - **⚙️ Configuration**: Google Sheets → UniCourt Processor → Configure Settings
 - **📊 Status Dashboard**: Google Sheets → UniCourt Processor → View Submission Log
-- **🔧 Backend API Docs**: Your backend URL + `/docs` (e.g., `http://localhost:8000/docs`)
+- **🔧 Backend API Docs**: Your backend URL + `/docs` (when using ngrok: `https://xxxx-xx-xx-xxx-xx.ngrok.io/docs`)
+
+> **Note**: When running the backend locally, you'll need to use ngrok to create a public URL:
+> ```bash
+> ngrok http 8000
+> ```
+> Use the provided ngrok URL in your Google Sheets configuration instead of localhost.
 
 ## 📋 Table of Contents
 
@@ -152,7 +158,7 @@ Google Sheets ←→ Apps Script ←→ Backend API ←→ UniCourt.com
 ```
 1. In Google Sheets: UniCourt Processor → Configure Settings
 2. In the sidebar, configure Backend Connection:
-   - Backend API URL: http://your-server-ip:8000/api/v1
+   - Backend API URL: Your backend URL (e.g., https://xxxx-xx-xx-xxx-xx.ngrok.io/api/v1)
    - Backend API Key: Your backend API access key
 3. Click "Save Backend Connection"
 ```
@@ -448,3 +454,5 @@ The application stores configuration in Apps Script Properties:
 ## 📄 License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
+
+> Both the frontend and backend repositories are licensed under the MIT License.
