@@ -17,6 +17,7 @@ function updateCaseDetailsSheet(sheet, caseDataMap, errorsMap) {
   const firstDataRow = headerRow + 1;
   const caseNumColIdx = UNICOURT_CONFIG.CASE_DETAILS_COLS.CASE_NUMBER_FOR_DB_ID - 1; // 0-based
   const maxCols = UNICOURT_CONFIG.CASE_DETAILS_COLS.FINAL_JUDGMENT_AWARDED_TO_CREDITOR_CONTEXT; // 1-based
+
   // 1. Read existing data from "Unicourt Processor Case Details" sheet
   let existingSheetData = [];
   const existingCaseDataMap = new Map(); // Map<case_number_for_db_id, Array<{rowIndexInArray: number, rowData: Array<any>}>>
@@ -56,7 +57,15 @@ function updateCaseDetailsSheet(sheet, caseDataMap, errorsMap) {
     let rowValues;
 
     if (backendData) { // Data successfully fetched from backend      
-    rowValues = [
+      // Helper function to check if array/JSON is empty
+      const isEmptyArrayOrJSON = (value) => {
+        if (!value) return true;
+        if (Array.isArray(value) && value.length === 0) return true;
+        if (typeof value === 'string' && (value.trim() === '[]' || value.trim() === '{}')) return true;
+        return false;
+      };
+
+      rowValues = [
         backendData.id || "",
         backendData.case_number_for_db_id || caseNum,
         backendData.unicourt_actual_case_number_on_page || "",
@@ -65,7 +74,7 @@ function updateCaseDetailsSheet(sheet, caseDataMap, errorsMap) {
         backendData.is_business ? "TRUE" : "FALSE",
         backendData.creditor_type || "",
         backendData.unicourt_case_name_on_page || "",
-        backendData.case_url_on_unicourt ? `=HYPERLINK("${backendData.case_url_on_unicourt}","View on Unicourt")` : "",
+        backendData.case_url_on_unicourt || "",
         backendData.status || (backendErrorMsg ? "Data with Error" : "N/A"),
         backendData.last_submitted_at ? Utilities.formatDate(new Date(backendData.last_submitted_at), "America/New_York", "yyyy-MM-dd HH:mm:ss z") : "",
         backendData.original_creditor_name_from_doc || "",
@@ -73,10 +82,12 @@ function updateCaseDetailsSheet(sheet, caseDataMap, errorsMap) {
         backendData.creditor_address_from_doc || "",
         backendData.creditor_address_source_doc_title || "",
         backendData.associated_parties ? backendData.associated_parties.join("; ") : "",
-        backendData.associated_parties_data ? JSON.stringify(backendData.associated_parties_data.map(party => ({ name: party.name, address: party.address })), null, 2) : "[]",
+        // Use N/A for empty associated parties data
+        isEmptyArrayOrJSON(backendData.associated_parties_data) ? "N/A" : JSON.stringify(backendData.associated_parties_data.map(party => ({ name: party.name, address: party.address })), null, 2),
         backendData.creditor_registration_state_from_doc || "",
         backendData.creditor_registration_state_source_doc_title || "",
-        backendData.processed_documents_summary ? JSON.stringify(backendData.processed_documents_summary, null, 2) : "[]",
+        // Use N/A for empty processed documents summary
+        isEmptyArrayOrJSON(backendData.processed_documents_summary) ? "N/A" : JSON.stringify(backendData.processed_documents_summary, null, 2),
         backendData.final_judgment_awarded_to_creditor || "",
         backendData.final_judgment_awarded_source_doc_title || "",
         backendData.final_judgment_awarded_to_creditor_context || ""
@@ -105,7 +116,9 @@ function updateCaseDetailsSheet(sheet, caseDataMap, errorsMap) {
       // Should not happen if caseNum is in refreshedCaseNumbers
       Logger.log(`updateCaseDetailsSheet: Case ${caseNum} was in refreshed list but no data or error found.`);
       return; // Skip this case
-    }    if (existingCaseDataMap.has(caseNum)) {
+    }
+
+    if (existingCaseDataMap.has(caseNum)) {
       // Update all existing rows for this case number (handles duplicates)
       const existingRowsArray = existingCaseDataMap.get(caseNum);
       existingRowsArray.forEach(existingInfo => {
@@ -117,38 +130,15 @@ function updateCaseDetailsSheet(sheet, caseDataMap, errorsMap) {
       newRowsToAppend.push(rowValues);
       newCount++;
     }
-  });  // 4. Write back data
+  });
+
+  // 4. Write back data
   // Batch update approach - collect all changes then write at once
   if (existingSheetData.length > 0 && updatedCount > 0) {
     // Write all existing data back to sheet in one operation
     sheet.getRange(firstDataRow, 1, existingSheetData.length, maxCols).setValues(existingSheetData);
-      // Handle hyperlink formulas separately since they can't be set with setValues
-    const hyperlinkUpdates = [];
-    refreshedCaseNumbers.forEach(caseNum => {
-      if (existingCaseDataMap.has(caseNum)) {
-        const existingRowsArray = existingCaseDataMap.get(caseNum);
-        const backendData = caseDataMap[caseNum];
-        
-        // Update hyperlinks for all duplicate rows of this case
-        existingRowsArray.forEach(existingInfo => {
-          const sheetRowIndex = existingInfo.rowIndexInArray + firstDataRow;
-          
-          if (backendData && backendData.case_url_on_unicourt) {
-            hyperlinkUpdates.push({
-              row: sheetRowIndex,
-              formula: `=HYPERLINK("${backendData.case_url_on_unicourt}","View on Unicourt")`
-            });
-          }
-        });
-      }
-    });
     
-    // Apply hyperlink formulas in batch
-    hyperlinkUpdates.forEach(update => {
-      sheet.getRange(update.row, UNICOURT_CONFIG.CASE_DETAILS_COLS.CASE_URL).setFormula(update.formula);
-    });
-    
-    Logger.log(`updateCaseDetailsSheet: Updated ${updatedCount} existing rows using batch operations. Applied ${hyperlinkUpdates.length} hyperlink formulas.`);
+    Logger.log(`updateCaseDetailsSheet: Updated ${updatedCount} existing rows using batch operations.`);
   }
 
   if (newRowsToAppend.length > 0) {
@@ -202,17 +192,26 @@ function updateSampleResearchedCaseSheet(sheet, caseDataMap) {
   
   let updatedCount = 0;
 
+  // Helper function to check if array/JSON is empty
+  const isEmptyArrayOrJSON = (value) => {
+    if (!value) return true;
+    if (Array.isArray(value) && value.length === 0) return true;
+    if (typeof value === 'string' && (value.trim() === '[]' || value.trim() === '{}')) return true;
+    return false;
+  };
+
   // Iterate through sheet data (starting from row 1, which is index 0 in sheetValues after header)
   for (let i = 1; i < sheetValues.length; i++) { // i = 0 is header row
     const sheetCaseNum = String(sheetValues[i][caseNumColIdx] || "").trim();
     if (sheetCaseNum && caseDataMap.hasOwnProperty(sheetCaseNum)) {
       const backendData = caseDataMap[sheetCaseNum];
-      if (backendData) {        // Update values directly in the sheetValues array
+      if (backendData) {
+        // Update values directly in the sheetValues array
         sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.CREDITOR_BIZ_STATE]] = backendData.creditor_registration_state_from_doc || "";
         sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.ORIGINAL_CREDITOR_NAME]] = backendData.original_creditor_name_from_doc || "";
         sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.ORIGINAL_CREDITOR_ADDRESS]] = backendData.creditor_address_from_doc || "";
-        sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.ADDITIONAL_CREDITOR_NAME]] = backendData.associated_parties ? backendData.associated_parties.join("; ") : "";
-        sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.ADDITIONAL_CREDITOR_ADDRESS]] = backendData.associated_parties_data ? JSON.stringify(backendData.associated_parties_data.map(party => ({ name: party.name, address: party.address })), null, 2) : "[]";
+        sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.ADDITIONAL_CREDITOR_NAME]] = isEmptyArrayOrJSON(backendData.associated_parties) ? "N/A" : backendData.associated_parties.join("; ");
+        sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.ADDITIONAL_CREDITOR_ADDRESS]] = isEmptyArrayOrJSON(backendData.associated_parties_data) ? "N/A" : JSON.stringify(backendData.associated_parties_data.map(party => ({ name: party.name, address: party.address })), null, 2);
         sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.VOLUNTARY_DISMISSAL]] = backendData.status === 'Voluntary_Dismissal_Found_Skipped' ? 'Y' : 'N';
         sheetValues[i][headerIndices[UNICOURT_CONFIG.SAMPLE_RESEARCHED_CASE_HEADERS.FINAL_JUDGMENT_AWARDED_TO_CREDITOR]] = backendData.final_judgment_awarded_to_creditor || "";
         updatedCount++;
