@@ -33,7 +33,7 @@ A Google Apps Script-based frontend interface for the UniCourt Automation Backen
 - [🐛 Troubleshooting](#-troubleshooting)
 - [🛠️ Development](#️-development)
 - [🔒 Security](#-security)
-- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
 
 ## ✨ Features
 
@@ -398,58 +398,6 @@ The application stores configuration in Apps Script Properties:
 - **Access Review**: Regularly review who has access to sheets
 - **API Monitoring**: Monitor API usage and errors
 - **Backup**: Regular backup of important case data
-
-## 🤝 Contributing
-
-### Development Guidelines
-
-1. **Code Style**
-   - Follow Google Apps Script conventions
-   - Use clear, descriptive function names
-   - Comment complex logic thoroughly
-   - Maintain consistent indentation
-
-2. **Testing**
-   - Test all changes with sample data
-   - Verify error handling scenarios
-   - Test UI interactions thoroughly
-   - Validate API integration points
-
-3. **Documentation**
-   - Update README for new features
-   - Document configuration changes
-   - Update user guide for UI changes
-   - Include troubleshooting information
-
-### Contribution Process
-
-1. **Fork the Repository**
-   ```
-   git clone https://github.com/ous-sama22/Unicourt_Automation_Front-End.git
-   ```
-
-2. **Create Feature Branch**
-   ```
-   git checkout -b feature/amazing-feature
-   ```
-
-3. **Make Changes**
-   - Implement your feature or fix
-   - Test thoroughly with sample data
-   - Update documentation as needed
-
-4. **Submit Pull Request**
-   ```
-   git commit -m 'Add amazing feature'
-   git push origin feature/amazing-feature
-   ```
-
-### Feature Requests
-
-1. Check [GitHub Issues](https://github.com/ous-sama22/Unicourt_Automation_Front-End/issues) for existing requests
-2. Create detailed issue with use case description
-3. Include mockups or examples if applicable
-4. Consider implementation complexity and maintenance
 
 ## 📄 License
 
