@@ -1,6 +1,8 @@
 # UniCourt Automation Frontend - Google Apps Script
 
-A Google Apps Script-based frontend interface for the UniCourt Automation Backend API, providing seamless integration with Google Sheets for case processing, data management, and automated document analysis.
+A Google Apps Script solution that transforms Google Sheets into a powerful case management interface for UniCourt automation. Seamlessly integrates with the backend API to provide an intuitive, spreadsheet-based workflow for case processing, document extraction, and automated legal document analysis.
+
+**Topics:** google-apps-script, google-sheets, case-management, legal-automation, unicourt-integration, spreadsheet-automation, rest-api-client, batch-processing, material-design, real-time-monitoring
 
 ## 🔗 Related Repositories
 
