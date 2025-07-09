@@ -72,8 +72,7 @@ Google Apps Script Project
 ├── Unicourt Processor UISidebar.html   # Main settings sidebar
 ├── Unicourt Processor UserGuide.html   # Comprehensive user documentation
 ├── Unicourt Processor AutoSubmitIntervalDialog.html # Auto-submission settings
-├── onOpen.gs                           # Google Sheets menu integration
-└── read_files.py                       # Development utility
+└── onOpen.gs                           # Google Sheets menu integration
 ```
 
 ### Integration Flow
